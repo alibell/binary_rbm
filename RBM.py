@@ -96,12 +96,11 @@ class binary_RBM ():
             raise ValueError("Variable should be valued 'hidden' or 'visible'")
 
         if variable=='hidden':
-            X_ = variable_value.dot(self.coefs_["W"])+self.coefs_["b"]
+            Z_ = variable_value.dot(self.coefs_["W"])+self.coefs_["b"]
         else:
-            X_ = self.coefs_["W"].dot(variable_value.T)+self.coefs_["a"].reshape(-1,1)
-            X_ = X_.T
+            Z_ = variable_value.dot(self.coefs_["W"].T)+self.coefs_["a"]
 
-        res = sigmoid(X_)
+        res = sigmoid(Z_)
 
         return res
 
@@ -120,7 +119,7 @@ class binary_RBM ():
         """
 
         hidden_probs = self._get_conditional_probability("hidden", X)
-        H = (np.random.randint(0,1,(X.shape[0],self.q)) <= hidden_probs).astype("int")
+        H = (np.random.rand(X.shape[0],self.q) <= hidden_probs).astype("int")
 
         return H
 
@@ -139,7 +138,7 @@ class binary_RBM ():
         """
 
         visible_probs = self._get_conditional_probability("visible", H)
-        X = (np.random.randint(0,1,(H.shape[0], self.p_)) <= visible_probs).astype("int")
+        X = (np.random.rand(H.shape[0], self.p_) <= visible_probs).astype("int")
 
         return X
 
@@ -225,17 +224,16 @@ class binary_RBM ():
                 grads = self.grad(X_batch_)
 
                 # Perform gradient descent steps
-                old_w = self.coefs_["W"].copy()
-                self.coefs_["W"] -= self.lr*grads["W"]
-                self.coefs_["a"] -= self.lr*grads["a"]
-                self.coefs_["b"] -= self.lr*grads["b"]
+                self.coefs_["W"] += self.lr*grads["W"]
+                self.coefs_["a"] += self.lr*grads["a"]
+                self.coefs_["b"] += self.lr*grads["b"]
 
             # Getting the loss
             loss = self.get_loss(X)
             self.loss.append(loss)
 
             if (len(self.loss) > 1):
-                if self.loss[-2]-self.loss[-1] <= 1.e-8:
+                if self.loss[-2]-self.loss[-1] <= self.stop_criterion:
                     n_iter_no_changes = n_iter_no_changes+1
                     if n_iter_no_changes >= 20:
                         return None
