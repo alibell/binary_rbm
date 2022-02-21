@@ -28,7 +28,6 @@ class binary_RBM ():
         stop_criterion: float, amplitude of absence of loss changes during 3 iterations to stop the training
         batch_size: int, number of sample to process in each batch
         max_iter: int, maximum number of iteration during training
-
         lr: float, learning rate
         """
         if isinstance(batch_size, int):
@@ -61,6 +60,7 @@ class binary_RBM ():
             'b':None,
             'W':None
         }
+        self.fitted_ = False
 
     def _init_params(self, X):
         """_init_params
@@ -239,3 +239,39 @@ class binary_RBM ():
                         return None
                 else:
                     n_iter_no_changes = 0
+
+        # Storing the fitted state
+        self.fitted_ = True
+
+    def generate(self, n_sample=1, p=0.5, n_gibbs=10):
+        """generate
+        
+        Generate data by sampling according to a binomial distribution
+
+        Parameters:
+        ----------
+        p: float, binomial parameter
+        n_sample: int, size of the sample to generate
+        n_gibbs: integer, number of gibbs sampling to proceed
+        """
+
+        # Data type checks
+        if isinstance(p, float) == False:
+            raise ValueError("P should be of type float")
+
+        if isinstance(n_gibbs, int) == False:
+            raise ValueError("n_gibbs should be of type int")
+
+        if isinstance(n_sample, int) == False:
+            raise ValueError("n_sample should be of type int")
+
+
+        # Initializing by random generation
+        V = (np.random.rand(n_sample, self.p_) <= p)*1
+
+        # Gibbs sampling
+        for i in range(n_gibbs):
+            H = self.get_hidden(V)
+            V = self.get_visible(H)
+
+        return V
