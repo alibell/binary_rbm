@@ -1,4 +1,5 @@
-import RBM
+from . import RBM
+import numpy as np
 
 class binary_DBN ():
         def __init__ (self, hidden_states=(), max_iter=300, batch_size=64, stop_criterion=1e-4, lr=0.01):
@@ -54,7 +55,7 @@ class binary_DBN ():
         def get_hidden(self, X):
             """Get hidden variables
 
-                Use gibbs to sample hidden variables from visible variable
+                Use the network to sample hidden variables from visible variable
                 
                 Parameters
                 ----------
@@ -66,14 +67,18 @@ class binary_DBN ():
             """
 
             X_ = X
-            hidden_variables = []
+            hidden_variables_proba = []
 
             for i in range(len(self.layers_)):
-                hidden_variables.append(
-                    self.layers_[i].get_hidden(X_)
+                hidden_probs_ = self.layers_[i]._get_conditional_probability("hidden", X_)
+
+                hidden_variables_proba.append(
+                    hidden_probs_
                 )
 
-                X_ = hidden_variables[-1]
+                X_ = hidden_variables_proba[-1]
+
+            return hidden_variables_proba
 
         def generate(self, n_sample=1, p=0.5, n_gibbs=1):
             """generate
@@ -97,6 +102,9 @@ class binary_DBN ():
 
             # Propagate informations
             for i in range(len(self.layers_)-2, -1, -1):
-                H = self.layers_[i].get_visible(H)
+                H = self.layers_[i]._get_conditional_probability("visible", H)
+
+            # Sampling
+            H = (np.random.rand(*H.shape) <= H).astype("int")
 
             return H
